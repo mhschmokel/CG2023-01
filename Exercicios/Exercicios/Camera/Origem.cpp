@@ -109,9 +109,9 @@ int main()
 		glUniformMatrix4fv(viewLoc, 1, FALSE, glm::value_ptr(view));
 		
 		glBindVertexArray(VAO);
-		glDrawArrays(GL_TRIANGLES, 0, 36);
+		glDrawArrays(GL_TRIANGLES, 0, 42);
 		
-		glDrawArrays(GL_POINTS, 0, 36);
+		glDrawArrays(GL_POINTS, 0, 42);
 		glBindVertexArray(0);
 
 		glfwSwapBuffers(window);
@@ -126,7 +126,7 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
 		glfwSetWindowShouldClose(window, GL_TRUE);
 
-	if (key == GLFW_KEY_X && action == GLFW_PRESS)
+	/*if (key == GLFW_KEY_X && action == GLFW_PRESS)
 	{
 		rotateX = true;
 		rotateY = false;
@@ -145,6 +145,44 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 		rotateX = false;
 		rotateY = false;
 		rotateZ = true;
+	}*/
+
+	//Frente do cubo
+	if (key == GLFW_KEY_1 && action == GLFW_PRESS)
+	{
+		cameraPos = glm::vec3(0.0, 0.0, 3.0); 
+		cameraFront = glm::vec3(0.0, 0.0, -1.0);
+	}
+
+	//Traseira do cubo
+	if (key == GLFW_KEY_2 && action == GLFW_PRESS)
+	{
+		cameraPos = glm::vec3(0.0, 0.0, -3.0);
+		cameraFront = glm::vec3(0.0, 0.0, 1.0);
+	}
+
+	//Esquerda do cubo
+	if (key == GLFW_KEY_3 && action == GLFW_PRESS)
+	{
+		cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
+		cameraPos = glm::vec3(-3.0f, 0.0f, 0.0f);
+		cameraFront = glm::vec3(1.0f, 0.0f, 0.0f);
+	}
+
+	//Direita do cubo
+	if (key == GLFW_KEY_4 && action == GLFW_PRESS)
+	{
+		cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
+		cameraPos = glm::vec3(3.0f, 0.0f, 0.0f);
+		cameraFront = glm::vec3(-1.0f, 0.0f, 0.0f);
+	}
+
+	//Topo do cubo
+	if (key == GLFW_KEY_5 && action == GLFW_PRESS)
+	{
+		cameraPos = glm::vec3(0.0f, 3.0f, 0.0f);
+		cameraFront = glm::vec3(0.0f, -1.0f, 0.0f);
+		cameraUp = glm::vec3(-1.0f, 0.0f, 0.0f);
 	}
 
 	float cameraSpeed = 0.05;
@@ -234,6 +272,15 @@ int setupGeometry()
 		-0.5, 0.5,  -0.5, 1.0, 1.0, 0.0, //Ponto U (amarelo)
 		-0.5, -0.5, -0.5, 0.0, 0.0, 1.0, //ponto A (azul)
 		-0.5, 0.5, 0.5, 1.0, 0.0, 1.0, //Ponto T (roxo)
+
+		//"Chão"
+		-5.0, -0.5, -5.0, 0.5, 0.5, 0.5,
+		-5.0, -0.5,  5.0, 0.5, 0.5, 0.5,
+		5.0, -0.5, -5.0, 0.5, 0.5, 0.5,
+
+		-5.0, -0.5,  5.0, 0.5, 0.5, 0.5,
+		5.0, -0.5,  5.0, 0.5, 0.5, 0.5,
+		5.0, -0.5, -5.0, 0.5, 0.5, 0.5
 	};
 
 	GLuint VBO, VAO;
