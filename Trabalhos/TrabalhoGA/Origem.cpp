@@ -11,9 +11,11 @@ using namespace std;
 #include <glm/gtc/type_ptr.hpp>
 
 #include "../Common/include/Shader.h"
+#include "Camera.h"
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
+void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 
 int setupGeometry();
 
@@ -21,14 +23,16 @@ const GLuint WIDTH = 1000, HEIGHT = 1000;
 
 bool rotateX = false, rotateY = false, rotateZ = false;
 
-glm::vec3 cameraPos = glm::vec3(0.0, 0.0, 3.0);
-glm::vec3 cameraFront = glm::vec3(0.0, 0.0, -1.0);
-glm::vec3 cameraUp = glm::vec3(0.0, 1.0, 0.0);
-float cameraSpeed = 0.05;
+//glm::vec3 cameraPos = glm::vec3(0.0, 0.0, 3.0);
+//glm::vec3 cameraFront = glm::vec3(0.0, 0.0, -1.0);
+//glm::vec3 cameraUp = glm::vec3(0.0, 1.0, 0.0);
+//float cameraSpeed = 0.05;
 
-bool firstMouse = true;
-float lastX = 0.0, lastY = 0.0;
-float yaw = -90.0, pitch = 0.0;
+//bool firstMouse = true;
+//float lastX = 0.0, lastY = 0.0;
+//float yaw = -90.0, pitch = 0.0;
+
+Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
 
 int main()
 {
@@ -39,6 +43,7 @@ int main()
 
 	glfwSetKeyCallback(window, key_callback);
 	glfwSetCursorPosCallback(window, mouse_callback);
+	glfwSetScrollCallback(window, scroll_callback);
 
 	//glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED); //desabilita cursor mouse
 
@@ -72,11 +77,13 @@ int main()
 	glUniformMatrix4fv(modelLoc, 1, FALSE, glm::value_ptr(model));
 
 	//Definindo a matriz de view (posição e orientação da câmera)
-	glm::mat4 view = glm::lookAt(glm::vec3(0.0, 0.0, 3.0), glm::vec3(0.0, 0.0, 0.0), glm::vec3(0.0, 1.0, 0.0));
+	//glm::mat4 view = glm::lookAt(glm::vec3(0.0, 0.0, 3.0), glm::vec3(0.0, 0.0, 0.0), glm::vec3(0.0, 1.0, 0.0));
+	glm::mat4 view = camera.getViewMatrix();
 	GLint viewLoc = glGetUniformLocation(shader.ID, "view");
 	glUniformMatrix4fv(viewLoc, 1, FALSE, glm::value_ptr(view));
 
 	//Definindo a matriz de projeção perpectiva
+	float aspectRation = (float)width / (float)height;
 	glm::mat4 projection = glm::perspective(glm::radians(45.0f), (GLfloat)width / (GLfloat)height, 0.1f, 100.0f);
 	GLint projLoc = glGetUniformLocation(shader.ID, "projection");
 	glUniformMatrix4fv(projLoc, 1, FALSE, glm::value_ptr(projection));
@@ -117,8 +124,12 @@ int main()
 		glUniformMatrix4fv(modelLoc, 1, FALSE, glm::value_ptr(model));
 
 		//Alterando a matriz de view (posição e orientação da câmera)
-		glm::mat4 view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
+		//glm::mat4 view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
+		view = camera.getViewMatrix();
 		glUniformMatrix4fv(viewLoc, 1, FALSE, glm::value_ptr(view));
+
+		projection = camera.getProjectionMatrix(aspectRation);
+		glUniformMatrix4fv(projLoc, 1, FALSE, glm::value_ptr(projection));
 
 		glBindVertexArray(VAO);
 		glDrawArrays(GL_TRIANGLES, 0, 24);
@@ -159,55 +170,18 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 		rotateZ = true;
 	}
 
-	if (key == GLFW_KEY_W)
-	{
-		cameraPos += cameraSpeed * cameraFront;
-	}
-
-	if (key == GLFW_KEY_S)
-	{
-		cameraPos -= cameraSpeed * cameraFront;
-	}
-
-	if (key == GLFW_KEY_A)
-	{
-		cameraPos -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
-	}
-
-	if (key == GLFW_KEY_D)
-	{
-		cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
-	}
+	camera.processKeyboard(window, 0.05);
 }
 
 void mouse_callback(GLFWwindow* window, double xpos, double ypos)
 {
-	if (firstMouse)
-	{
-		lastX = xpos;
-		lastY = ypos;
-		firstMouse = false;
-	}
-
-	float offsetx = xpos - lastX;
-	float offsety = lastY - ypos;
-	lastX = xpos;
-	lastY = ypos;
-
-	offsetx *= cameraSpeed;
-	offsety *= cameraSpeed;
-
-	pitch += offsety;
-	yaw += offsetx;
-
-	glm::vec3 front;
-	front.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
-	front.y = sin(glm::radians(pitch));
-	front.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
-	cameraFront = glm::normalize(front);
-
+	camera.processMouseMovement(xpos, ypos);
 }
 
+void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
+{
+	camera.processMouseScroll(yoffset);
+}
 
 // Esta função está bastante harcoded - objetivo é criar os buffers que armazenam a 
 // geometria de um triângulo
