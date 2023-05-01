@@ -58,13 +58,14 @@ bool resetObject = false;
 bool changeObject = false;
 
 bool displayAllObjects = false;
+bool spaceObjects = true;
 
 int main()
 {
 	std::vector<std::string> modelsPath = {"../models/Cube/cube.obj", 
-		"../models/Suzanne/suzanneTri.obj",
-		"../models/Pokemon/Pikachu.obj"};
-
+		"../models/Suzanne/suzanneTri.obj", 
+		"../models/Pokemon/Pikachu.obj", 
+		"../models/Classic-NoTexture/apple.obj" };
 
 	glfwInit();
 
@@ -147,8 +148,8 @@ int main()
 		glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		glLineWidth(10);
-		glPointSize(20);
+		/*glLineWidth(10);
+		glPointSize(20);*/
 
 		//Alterando a matriz de view (posição e orientação da câmera)
 		glm::mat4 view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
@@ -157,18 +158,18 @@ int main()
 		//Enviando a posição da camera para o shader
 		shader.setVec3("cameraPos", cameraPos.x, cameraPos.y, cameraPos.z);
 
-		if (displayAllObjects) {
-			glm::vec3 position = glm::vec3(0.0f);
+		float angle = (GLfloat)glfwGetTime() * 7;
 
+		if (displayAllObjects) {
+
+			glm::vec3 pos = glm::vec3(0.0, 0.0, 0.0);
 			for (Mesh obj : objects) {
-				obj.translate(position);
+				obj.translate(pos);
+				pos.x += 3.0;
 				obj.draw();
-				position.x += 4.0;
 			}
 		}
 		else {
-			float angle = (GLfloat)glfwGetTime() * 7;
-
 			if (changeObject) {
 				rotateX = false;
 				rotateY = false;
@@ -227,6 +228,9 @@ int main()
 			}
 
 			if (resetObject) {
+				rotateX = false;
+				rotateY = false;
+				rotateZ = false;
 				objects[currentObjectIdx].reset();
 				resetObject = false;
 			}
@@ -326,6 +330,7 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 
 	if (key == GLFW_KEY_SPACE && action == GLFW_PRESS) {
 		displayAllObjects = !displayAllObjects;
+		resetObject = true;
 	}
 }
 
@@ -421,15 +426,35 @@ int loadSimpleObj(string filePath, int& nVertices, glm::vec3 color)
 
 					tokens[i] = tokens[i].substr(pos + 1);
 					pos = tokens[i].find("/");
+
+					if (pos == 0) {
+						tokens[i] = tokens[i].substr(pos + 1);
+					}
+
+					pos = tokens[i].find("/");
 					token = tokens[i].substr(0, pos);
 					int indexT = atoi(token.c_str()) - 1;
 
-					vertbuffer.push_back(texCoord[indexT].s);
-					vertbuffer.push_back(texCoord[indexT].t);
+					if (indexT < 0) {
+						indexT = 0;
+					}
+
+					if (texCoord.size() == 0) {
+						vertbuffer.push_back(0);
+						vertbuffer.push_back(0);
+					}
+					else {
+						vertbuffer.push_back(texCoord[indexT].s);
+						vertbuffer.push_back(texCoord[indexT].t);
+					}
 
 					tokens[i] = tokens[i].substr(pos + 1);
 					token = tokens[i].substr(0, pos);
 					int indexN = atoi(token.c_str()) - 1;
+
+					if (indexN < 0) {
+						indexN = 0;
+					}
 
 					vertbuffer.push_back(normals[indexN].x);
 					vertbuffer.push_back(normals[indexN].y);
