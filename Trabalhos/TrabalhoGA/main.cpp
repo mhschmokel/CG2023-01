@@ -69,7 +69,7 @@ int main()
 
 	glfwInit();
 
-	GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, "Ola Visualizador 3D!", nullptr, nullptr);
+	GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, "Visualizador 3D!", nullptr, nullptr);
 	glfwMakeContextCurrent(window);
 
 	glfwSetKeyCallback(window, key_callback);
@@ -148,9 +148,6 @@ int main()
 		glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		/*glLineWidth(10);
-		glPointSize(20);*/
-
 		//Alterando a matriz de view (posição e orientação da câmera)
 		glm::mat4 view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
 		glUniformMatrix4fv(viewLoc, 1, FALSE, glm::value_ptr(view));
@@ -158,7 +155,7 @@ int main()
 		//Enviando a posição da camera para o shader
 		shader.setVec3("cameraPos", cameraPos.x, cameraPos.y, cameraPos.z);
 
-		float angle = (GLfloat)glfwGetTime() * 7;
+		float angle = (GLfloat)glfwGetTime() * 10;
 
 		if (displayAllObjects) {
 
@@ -256,7 +253,7 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 
 	if (key == GLFW_KEY_X && action == GLFW_PRESS)
 	{
-		rotateX = true;
+		rotateX = !rotateX;
 		rotateY = false;
 		rotateZ = false;
 	}
@@ -264,7 +261,7 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 	if (key == GLFW_KEY_Y && action == GLFW_PRESS)
 	{
 		rotateX = false;
-		rotateY = true;
+		rotateY = !rotateY;
 		rotateZ = false;
 	}
 
@@ -272,7 +269,7 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 	{
 		rotateX = false;
 		rotateY = false;
-		rotateZ = true;
+		rotateZ = !rotateZ;
 	}
 
 	if (key == GLFW_KEY_R && action == GLFW_PRESS) {
