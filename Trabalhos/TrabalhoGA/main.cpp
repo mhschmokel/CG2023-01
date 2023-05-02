@@ -20,6 +20,12 @@ using namespace std;
 
 #include "../Common/include/Shader.h"
 
+#include "imgui.h"
+#include "imgui_impl_glfw.h"
+#include "imgui_impl_opengl3.h"
+
+#include "ImGuiFileDialog.h"
+
 #include "Mesh.h"
 
 
@@ -32,6 +38,7 @@ struct Vertex
 // Protótipo da função de callback de teclado
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
+void mouse_button_callback(GLFWwindow* window, int button, int action, int mods);
 
 // Protótipos das funções
 int setupGeometry();
@@ -39,6 +46,7 @@ int loadSimpleObj(string filePath, int& nVertices, glm::vec3 color = glm::vec3(1
 
 // Dimensões da janela (pode ser alterado em tempo de execução)
 const GLuint WIDTH = 1000, HEIGHT = 1000;
+const char* glsl_version = "#version 450";
 
 bool rotateX = false, rotateY = false, rotateZ = false;
 
@@ -60,12 +68,18 @@ bool changeObject = false;
 bool displayAllObjects = false;
 bool spaceObjects = true;
 
+bool hasToDisableCursor = true;
+
 int main()
 {
-	std::vector<std::string> modelsPath = {"../models/Cube/cube.obj", 
+	std::vector<std::string> modelsPath = {
+		/*"../models/Cube/cube.obj", 
 		"../models/Suzanne/suzanneTri.obj", 
 		"../models/Pokemon/Pikachu.obj", 
-		"../models/Classic-NoTexture/apple.obj" };
+		"../models/Classic-NoTexture/apple.obj" */
+	};
+
+	
 
 	glfwInit();
 
@@ -74,7 +88,16 @@ int main()
 
 	glfwSetKeyCallback(window, key_callback);
 	glfwSetCursorPosCallback(window, mouse_callback);
+	glfwSetMouseButtonCallback(window, mouse_button_callback);
 
+	IMGUI_CHECKVERSION();
+	ImGui::CreateContext();
+	ImGuiIO& io = ImGui::GetIO();
+	ImGui::StyleColorsDark();
+	ImGui_ImplGlfw_InitForOpenGL(window, true);
+	ImGui_ImplOpenGL3_Init(glsl_version);
+
+	 
 
 	//Desabilita o desenho do cursor do mouse
 	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
@@ -132,11 +155,11 @@ int main()
 	GLuint VAO;
 	int nVertices = 0;
 
-	for (const std::string& path : modelsPath) {
+	/*for (const std::string& path : modelsPath) {
 		VAO = loadSimpleObj(path, nVertices);
 		object.initialize(VAO, nVertices, &shader);
 		objects.push_back(object);
-	}
+	}*/
 
 	glEnable(GL_DEPTH_TEST);
 
@@ -145,95 +168,151 @@ int main()
 		// Checa se houveram eventos de input (key pressed, mouse moved etc.) e chama as funções de callback correspondentes
 		glfwPollEvents();
 
+		// Start the ImGui frame
+		ImGui_ImplOpenGL3_NewFrame();
+		ImGui_ImplGlfw_NewFrame();
+		ImGui::NewFrame();
+
 		glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		//Alterando a matriz de view (posição e orientação da câmera)
-		glm::mat4 view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
-		glUniformMatrix4fv(viewLoc, 1, FALSE, glm::value_ptr(view));
-
-		//Enviando a posição da camera para o shader
-		shader.setVec3("cameraPos", cameraPos.x, cameraPos.y, cameraPos.z);
+		
 
 		float angle = (GLfloat)glfwGetTime() * 10;
 
-		if (displayAllObjects) {
+		if (hasToDisableCursor) {
+			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
-			glm::vec3 pos = glm::vec3(0.0, 0.0, 0.0);
-			for (Mesh obj : objects) {
-				obj.translate(pos);
-				pos.x += 3.0;
-				obj.draw();
-			}
+			//Alterando a matriz de view (posição e orientação da câmera)
+			glm::mat4 view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
+			glUniformMatrix4fv(viewLoc, 1, FALSE, glm::value_ptr(view));
+
+			//Enviando a posição da camera para o shader
+			shader.setVec3("cameraPos", cameraPos.x, cameraPos.y, cameraPos.z);
 		}
 		else {
-			if (changeObject) {
-				rotateX = false;
-				rotateY = false;
-				rotateZ = false;
-				objects[currentObjectIdx].reset();
-				currentObjectIdx++;
-				currentObjectIdx = currentObjectIdx % objects.size();
-				changeObject = false;
-			}
-
-			if (increaseScale) {
-				objects[currentObjectIdx].increaseScale();
-				increaseScale = false;
-			}
-			else if (decreaseScale) {
-				objects[currentObjectIdx].decreaseScale();
-				decreaseScale = false;
-			}
-
-			if (rotateX)
-			{
-				objects[currentObjectIdx].rotateX(angle);
-			}
-			else if (rotateY)
-			{
-				objects[currentObjectIdx].rotateY(angle);
-			}
-			else if (rotateZ)
-			{
-				objects[currentObjectIdx].rotateZ(angle);
-			}
-
-			if (moveUp) {
-				objects[currentObjectIdx].moveUp();
-				moveUp = false;
-			}
-			else if (moveDown) {
-				objects[currentObjectIdx].moveDown();
-				moveDown = false;
-			}
-			else if (moveRight) {
-				objects[currentObjectIdx].moveRight();
-				moveRight = false;
-			}
-			else if (moveLeft) {
-				objects[currentObjectIdx].moveLeft();
-				moveLeft = false;
-			}
-			else if (moveFront) {
-				objects[currentObjectIdx].moveFront();
-				moveFront = false;
-			}
-			else if (moveBack) {
-				objects[currentObjectIdx].moveBack();
-				moveBack = false;
-			}
-
-			if (resetObject) {
-				rotateX = false;
-				rotateY = false;
-				rotateZ = false;
-				objects[currentObjectIdx].reset();
-				resetObject = false;
-			}
-
-			objects[currentObjectIdx].draw();
+			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 		}
+
+		if (objects.size() > 0) {
+			if (displayAllObjects) {
+
+				glm::vec3 pos = glm::vec3(0.0, 0.0, 0.0);
+				for (Mesh obj : objects) {
+					obj.translate(pos);
+					pos.x += 3.0;
+					obj.draw();
+				}
+			}
+			else {
+				if (changeObject) {
+					rotateX = false;
+					rotateY = false;
+					rotateZ = false;
+					objects[currentObjectIdx].reset();
+					currentObjectIdx++;
+					currentObjectIdx = currentObjectIdx % objects.size();
+					changeObject = false;
+				}
+
+				if (increaseScale) {
+					objects[currentObjectIdx].increaseScale();
+					increaseScale = false;
+				}
+				else if (decreaseScale) {
+					objects[currentObjectIdx].decreaseScale();
+					decreaseScale = false;
+				}
+
+				if (rotateX)
+				{
+					objects[currentObjectIdx].rotateX(angle);
+				}
+				else if (rotateY)
+				{
+					objects[currentObjectIdx].rotateY(angle);
+				}
+				else if (rotateZ)
+				{
+					objects[currentObjectIdx].rotateZ(angle);
+				}
+
+				if (moveUp) {
+					objects[currentObjectIdx].moveUp();
+					moveUp = false;
+				}
+				else if (moveDown) {
+					objects[currentObjectIdx].moveDown();
+					moveDown = false;
+				}
+				else if (moveRight) {
+					objects[currentObjectIdx].moveRight();
+					moveRight = false;
+				}
+				else if (moveLeft) {
+					objects[currentObjectIdx].moveLeft();
+					moveLeft = false;
+				}
+				else if (moveFront) {
+					objects[currentObjectIdx].moveFront();
+					moveFront = false;
+				}
+				else if (moveBack) {
+					objects[currentObjectIdx].moveBack();
+					moveBack = false;
+				}
+
+				if (resetObject) {
+					rotateX = false;
+					rotateY = false;
+					rotateZ = false;
+					objects[currentObjectIdx].reset();
+					resetObject = false;
+				}
+
+				objects[currentObjectIdx].draw();
+			}
+		}
+
+		
+
+		// ImGui toolbox window
+		ImGui::Begin("Toolbox");
+
+		// ImGui UI elements, for example:
+		ImGui::Text("Model Import");
+		if (ImGui::Button("Load .obj"))
+		{
+			// Load your .obj file here
+			ImGuiFileDialog::Instance()->OpenDialog("ChooseObjFile", "Choose .obj file", ".obj\0", ".");
+		}
+
+		if (ImGuiFileDialog::Instance()->Display("ChooseObjFile"))
+		{
+			// Check if the user selected a file
+			if (ImGuiFileDialog::Instance()->IsOk())
+			{
+				// Get the selected file path
+				std::string filePath = ImGuiFileDialog::Instance()->GetFilePathName();
+				cout << "File path: " << filePath << endl;
+				// Load the .obj file using your existing loading function
+				VAO = loadSimpleObj(filePath, nVertices);
+				object.initialize(VAO, nVertices, &shader);
+				objects.push_back(object);
+
+				currentObjectIdx = objects.size() - 1;
+			}
+
+			// Close the ImGuiFileDialog
+			ImGuiFileDialog::Instance()->Close();
+		}
+
+
+		ImGui::End();
+
+		// Render ImGui
+		ImGui::Render();
+		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
 		glfwSwapBuffers(window);
 	}
@@ -241,7 +320,10 @@ int main()
 	for (Mesh obj : objects) {
 		obj.deleteVAO();
 	}
-
+	ImGuiFileDialog::Instance()->Close();
+	ImGui_ImplOpenGL3_Shutdown();
+	ImGui_ImplGlfw_Shutdown();
+	ImGui::DestroyContext();
 	glfwTerminate();
 	return 0;
 }
@@ -357,6 +439,27 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos)
 	front.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
 	cameraFront = glm::normalize(front);
 }
+
+void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
+{
+	if (ImGui::GetIO().WantCaptureMouse)
+	{
+		// ImGui wants to capture the mouse, so don't process the clicks for your 3D scene
+		return;
+	}
+
+	if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS)
+	{
+		// Left mouse button was pressed, do something here
+		hasToDisableCursor = true;
+	}
+	else if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS)
+	{
+		// Right mouse button was pressed, do something here
+		hasToDisableCursor = false;
+	}
+}
+
 
 int loadSimpleObj(string filePath, int& nVertices, glm::vec3 color)
 {

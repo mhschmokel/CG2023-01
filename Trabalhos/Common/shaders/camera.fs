@@ -13,7 +13,7 @@ uniform vec3 lightPos;
 uniform vec3 lightColor;
 uniform vec3 cameraPos;
 
-uniform mat4 view; // Add this line
+uniform mat4 view;
 
 out vec4 color;
 
