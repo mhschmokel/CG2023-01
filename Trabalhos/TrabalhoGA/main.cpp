@@ -274,8 +274,6 @@ int main()
 			}
 		}
 
-		
-
 		// ImGui toolbox window
 		ImGui::Begin("Toolbox");
 
