@@ -19,3 +19,8 @@ O trabalho consiste em um visualizador de objetos 3D a partir de arquivos .obj.
 - X: inicia ou para a rotação do objeto no eixo X
 - Y: inicia ou para a rotação do objeto no eixo Y
 - Z: inicia ou para a rotação do objeto no eixo Z
+
+## Dependências:
+
+- ![ImGUI](https://github.com/ocornut/imgui)
+- ![ImGUI File Browser](https://github.com/AirGuanZ/imgui-filebrowser)
