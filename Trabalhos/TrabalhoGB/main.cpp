@@ -4,6 +4,7 @@
 #include <fstream>
 #include <sstream>
 #include <vector>
+#include <stb_image.h>
 
 using namespace std;
 
@@ -26,7 +27,7 @@ using namespace std;
 
 #include "ImGuiFileDialog.h"
 
-#include "Mesh.h"
+#include "Object.h"
 
 
 struct Vertex
@@ -43,6 +44,7 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 // Protótipos das funções
 int setupGeometry();
 int loadSimpleObj(string filePath, int& nVertices, glm::vec3 color = glm::vec3(1.0, 0.0, 0.0));
+GLuint generateTexture(string filepath);
 
 // Dimensões da janela (pode ser alterado em tempo de execução)
 const GLuint WIDTH = 1000, HEIGHT = 1000;
@@ -118,7 +120,7 @@ int main()
 	glfwGetFramebufferSize(window, &width, &height);
 	glViewport(0, 0, width, height);
 
-	Shader shader("../Common/shaders/camera.vs", "../Common/shaders/camera.fs");
+	Shader shader("../Common/shaders/camera_texture_phong.vs", "../Common/shaders/camera_texture_phong.fs");
 
 	glUseProgram(shader.ID);
 
@@ -138,6 +140,8 @@ int main()
 	GLint projLoc = glGetUniformLocation(shader.ID, "projection");
 	glUniformMatrix4fv(projLoc, 1, FALSE, glm::value_ptr(projection));
 
+	glEnable(GL_DEPTH_TEST);
+
 	//Definindo as propriedades do material 
 	shader.setFloat("ka", 0.4);
 	shader.setFloat("kd", 0.5);
@@ -148,10 +152,13 @@ int main()
 	shader.setVec3("lightPos", -2.0f, 10.0f, 3.0f);
 	shader.setVec3("lightColor", 1.0f, 1.0f, 1.0f);
 
-	std::vector<Mesh> objects;
+	glActiveTexture(GL_TEXTURE0);
+	glUniform1i(glGetUniformLocation(shader.ID, "colorBuffer"), 0);
+
+	std::vector<Object> objects;
 	int currentObjectIdx = 0;
 
-	Mesh object;
+	
 	GLuint VAO;
 	int nVertices = 0;
 
@@ -160,8 +167,7 @@ int main()
 		object.initialize(VAO, nVertices, &shader);
 		objects.push_back(object);
 	}*/
-
-	glEnable(GL_DEPTH_TEST);
+	
 
 	while (!glfwWindowShouldClose(window))
 	{
@@ -198,7 +204,7 @@ int main()
 			if (displayAllObjects) {
 
 				glm::vec3 pos = glm::vec3(0.0, 0.0, 0.0);
-				for (Mesh obj : objects) {
+				for (Object obj : objects) {
 					obj.translate(pos);
 					pos.x += 3.0;
 					obj.draw();
@@ -294,8 +300,10 @@ int main()
 				std::string filePath = ImGuiFileDialog::Instance()->GetFilePathName();
 				cout << "File path: " << filePath << endl;
 				// Load the .obj file using your existing loading function
-				VAO = loadSimpleObj(filePath, nVertices);
-				object.initialize(VAO, nVertices, &shader);
+				/*VAO = loadSimpleObj(filePath, nVertices);*/
+				Object object;
+				
+				object.initialize(filePath, &shader);
 				objects.push_back(object);
 
 				currentObjectIdx = objects.size() - 1;
@@ -315,7 +323,7 @@ int main()
 		glfwSwapBuffers(window);
 	}
 	
-	for (Mesh obj : objects) {
+	for (Object obj : objects) {
 		obj.deleteVAO();
 	}
 	ImGuiFileDialog::Instance()->Close();
@@ -459,154 +467,179 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 }
 
 
-int loadSimpleObj(string filePath, int& nVertices, glm::vec3 color)
-{
-	ifstream inputFile;
-	inputFile.open(filePath);
-	vector <GLfloat> vertbuffer;
-
-	vector <Vertex> vertices;
-	vector <int> indices;
-	vector <glm::vec3> normals;
-	vector <glm::vec2> texCoord;
-
-	if (inputFile.is_open())
-	{
-		char line[100];
-		string sline;
-
-
-		while (!inputFile.eof())
-		{
-			inputFile.getline(line, 100);
-			sline = line;
-
-			string word;
-			istringstream ssline(sline);
-
-			ssline >> word;
-
-			if (word == "v")
-			{
-				Vertex v;
-				ssline >> v.position.x >> v.position.y >> v.position.z;
-				v.v_color.r = color.r; v.v_color.g = color.g; v.v_color.b = color.b;
-				vertices.push_back(v);
-			}
-			if (word == "vt")
-			{
-				glm::vec2 vt;
-				ssline >> vt.s >> vt.t;
-				texCoord.push_back(vt);
-			}
-			if (word == "vn")
-			{
-				glm::vec3 vn;
-				ssline >> vn.x >> vn.y >> vn.z;
-				normals.push_back(vn);
-			}
-			else if (word == "f")
-			{
-				string tokens[3];
-				for (int i = 0; i < 3; i++)
-				{
-					ssline >> tokens[i];
-					int pos = tokens[i].find("/");
-					string token = tokens[i].substr(0, pos);
-					int index = atoi(token.c_str()) - 1;
-					indices.push_back(index);
-					vertbuffer.push_back(vertices[index].position.x);
-					vertbuffer.push_back(vertices[index].position.y);
-					vertbuffer.push_back(vertices[index].position.z);
-					vertbuffer.push_back(vertices[index].v_color.r);
-					vertbuffer.push_back(vertices[index].v_color.g);
-					vertbuffer.push_back(vertices[index].v_color.b);
-
-					tokens[i] = tokens[i].substr(pos + 1);
-					pos = tokens[i].find("/");
-
-					if (pos == 0) {
-						tokens[i] = tokens[i].substr(pos + 1);
-					}
-
-					pos = tokens[i].find("/");
-					token = tokens[i].substr(0, pos);
-					int indexT = atoi(token.c_str()) - 1;
-
-					if (indexT < 0) {
-						indexT = 0;
-					}
-
-					if (texCoord.size() == 0) {
-						vertbuffer.push_back(0);
-						vertbuffer.push_back(0);
-					}
-					else {
-						vertbuffer.push_back(texCoord[indexT].s);
-						vertbuffer.push_back(texCoord[indexT].t);
-					}
-
-					tokens[i] = tokens[i].substr(pos + 1);
-					token = tokens[i].substr(0, pos);
-					int indexN = atoi(token.c_str()) - 1;
-
-					if (indexN < 0) {
-						indexN = 0;
-					}
-
-					vertbuffer.push_back(normals[indexN].x);
-					vertbuffer.push_back(normals[indexN].y);
-					vertbuffer.push_back(normals[indexN].z);
-
-				}
-
-			}
-
-		}
-
-		inputFile.close();
-	}
-	else
-	{
-		cout << "Não foi possivel abrir o arquivo " << filePath << endl;
-	}
-
-
-	nVertices = vertbuffer.size() / 11;
-
-	GLuint VBO, VAO;
-	glGenBuffers(1, &VBO);
-	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-	glBufferData(GL_ARRAY_BUFFER, vertbuffer.size() * sizeof(GLfloat), vertbuffer.data(), GL_STATIC_DRAW);
-	glGenVertexArrays(1, &VAO);
-	glBindVertexArray(VAO);
-
-	//Para cada atributo do vertice, criamos um "AttribPointer" (ponteiro para o atributo), indicando: 
-	// Localização no shader * (a localização dos atributos devem ser correspondentes no layout especificado no vertex shader)
-	// Numero de valores que o atributo tem (por ex, 3 coordenadas xyz) 
-	// Tipo do dado
-	// Se está normalizado (entre zero e um)
-	// Tamanho em bytes 
-	// Deslocamento a partir do byte zero 
-
-	//Atributo posição (x, y, z)
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 11 * sizeof(GLfloat), (GLvoid*)0);
-	glEnableVertexAttribArray(0);
-
-	//Atributo cor (r, g, b)
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 11 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
-	glEnableVertexAttribArray(1);
-
-	//Atributo coordenadas de textura (s, t)
-	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 11 * sizeof(GLfloat), (GLvoid*)(6 * sizeof(GLfloat)));
-	glEnableVertexAttribArray(2);
-
-	//Atributo vetor normal (x, y e z)
-	glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 11 * sizeof(GLfloat), (GLvoid*)(8 * sizeof(GLfloat)));
-	glEnableVertexAttribArray(3);
-
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	glBindVertexArray(0);
-	return VAO;
-}
-
+//int loadSimpleObj(string filePath, int& nVerts, glm::vec3 color)
+//{
+//	vector <Vertex> vertices;
+//	vector <GLuint> indices;
+//	vector <glm::vec2> texCoords;
+//	vector <glm::vec3> normals;
+//	vector <GLfloat> vbuffer;
+//
+//	ifstream inputFile;
+//	inputFile.open(filePath.c_str());
+//
+//	if (inputFile.is_open())
+//	{
+//		char line[100];
+//		string sline;
+//
+//
+//		while (!inputFile.eof())
+//		{
+//			inputFile.getline(line, 100);
+//			sline = line;
+//
+//			string word;
+//			istringstream ssline(sline);
+//
+//			ssline >> word;
+//
+//			if (word == "v")
+//			{
+//				Vertex v;
+//				ssline >> v.position.x >> v.position.y >> v.position.z;
+//				v.v_color.r = color.r; v.v_color.g = color.g; v.v_color.b = color.b;
+//				vertices.push_back(v);
+//			}
+//			if (word == "vt")
+//			{
+//				glm::vec2 vt;
+//				ssline >> vt.s >> vt.t;
+//				texCoords.push_back(vt);
+//			}
+//			if (word == "vn")
+//			{
+//				glm::vec3 vn;
+//				ssline >> vn.x >> vn.y >> vn.z;
+//				normals.push_back(vn);
+//			}
+//			if (word == "f")
+//			{
+//				string tokens[3];
+//
+//				ssline >> tokens[0] >> tokens[1] >> tokens[2];
+//
+//				for (int i = 0; i < 3; i++)
+//				{
+//					int pos = tokens[i].find("/");
+//					string token = tokens[i].substr(0, pos);
+//					int index = atoi(token.c_str()) - 1;
+//					indices.push_back(index);
+//
+//					vbuffer.push_back(vertices[index].position.x);
+//					vbuffer.push_back(vertices[index].position.y);
+//					vbuffer.push_back(vertices[index].position.z);
+//					vbuffer.push_back(vertices[index].v_color.r);
+//					vbuffer.push_back(vertices[index].v_color.g);
+//					vbuffer.push_back(vertices[index].v_color.b);
+//
+//					//Recuperando os indices de vts
+//					tokens[i] = tokens[i].substr(pos + 1);
+//					pos = tokens[i].find("/");
+//
+//					if (pos == 0) {
+//						tokens[i] = tokens[i].substr(pos + 1);
+//					}
+//
+//					pos = tokens[i].find("/");
+//					token = tokens[i].substr(0, pos);
+//					int indexT = atoi(token.c_str()) - 1;
+//
+//					if (indexT < 0) {
+//						indexT = 0;
+//					}
+//
+//					if (texCoords.size() == 0) {
+//						vbuffer.push_back(0);
+//						vbuffer.push_back(0);
+//					}
+//					else {
+//						vbuffer.push_back(texCoords[indexT].s);
+//						vbuffer.push_back(texCoords[indexT].t);
+//					}
+//
+//					tokens[i] = tokens[i].substr(pos + 1);
+//					token = tokens[i].substr(0, pos);
+//					int indexN = atoi(token.c_str()) - 1;
+//
+//					if (indexN < 0) {
+//						indexN = 0;
+//					}
+//
+//					vbuffer.push_back(normals[indexN].x);
+//					vbuffer.push_back(normals[indexN].y);
+//					vbuffer.push_back(normals[indexN].z);
+//
+//				}
+//			}
+//		}
+//	}
+//	else
+//	{
+//		cout << "Não foi possivel abrir o arquivo " << filePath << endl;
+//	}
+//	inputFile.close();
+//
+//	GLuint VBO, VAO;
+//
+//	nVerts = vbuffer.size() / 11;
+//
+//	glGenBuffers(1, &VBO);
+//	glBindBuffer(GL_ARRAY_BUFFER, VBO);
+//	glBufferData(GL_ARRAY_BUFFER, vbuffer.size() * sizeof(GLfloat), vbuffer.data(), GL_STATIC_DRAW);
+//	glGenVertexArrays(1, &VAO);
+//	glBindVertexArray(VAO);
+//	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 11 * sizeof(GLfloat), (GLvoid*)0);
+//	glEnableVertexAttribArray(0);
+//	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 11 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
+//	glEnableVertexAttribArray(1);
+//	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 11 * sizeof(GLfloat), (GLvoid*)(6 * sizeof(GLfloat)));
+//	glEnableVertexAttribArray(2);
+//	glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 11 * sizeof(GLfloat), (GLvoid*)(8 * sizeof(GLfloat)));
+//	glEnableVertexAttribArray(3);
+//	glBindBuffer(GL_ARRAY_BUFFER, 0);
+//
+//	glBindVertexArray(0);
+//	return VAO;
+//}
+//
+//GLuint generateTexture(string filepath)
+//{
+//	GLuint texID;
+//
+//	// Gera o identificador da textura na memória
+//	glGenTextures(1, &texID);
+//	glBindTexture(GL_TEXTURE_2D, texID);
+//
+//	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+//	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+//	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+//	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+//
+//	int width, height, nrChannels;
+//	unsigned char* data = stbi_load(filepath.c_str(), &width, &height, &nrChannels, 0);
+//
+//	if (data)
+//	{
+//		if (nrChannels == 3) //jpg, bmp
+//		{
+//			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE,
+//				data);
+//		}
+//		else //png
+//		{
+//			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE,
+//				data);
+//		}
+//		glGenerateMipmap(GL_TEXTURE_2D);
+//	}
+//	else
+//	{
+//		std::cout << "Failed to load texture" << std::endl;
+//	}
+//
+//	stbi_image_free(data);
+//	glBindTexture(GL_TEXTURE_2D, 0);
+//
+//	return texID;
+//}

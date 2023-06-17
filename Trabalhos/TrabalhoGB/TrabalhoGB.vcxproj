@@ -20,6 +20,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\Common\src\glad.c" />
+    <ClCompile Include="..\Common\src\stb_image.cpp" />
     <ClCompile Include="..\dependencies\imguiFileExplorer\src\ImGuiFileDialog.cpp" />
     <ClCompile Include="..\dependencies\imgui\src\imgui.cpp" />
     <ClCompile Include="..\dependencies\imgui\src\imgui_demo.cpp" />
@@ -30,9 +31,11 @@
     <ClCompile Include="..\dependencies\imgui\src\imgui_widgets.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Mesh.cpp" />
+    <ClCompile Include="Object.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Mesh.h" />
+    <ClInclude Include="Object.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
@@ -105,7 +108,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>../dependencies/glfw-3.3.4.bin.WIN32/include;../dependencies/GLAD/include;../dependencies/glm;../dependencies/imgui/include;../dependencies/imguiFileExplorer/include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../dependencies/glfw-3.3.4.bin.WIN32/include;../dependencies/GLAD/include;../dependencies/glm;../dependencies/imgui/include;../dependencies/imguiFileExplorer/include;../Common/include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
