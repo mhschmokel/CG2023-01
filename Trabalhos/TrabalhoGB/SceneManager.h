@@ -13,6 +13,9 @@ public:
 	void draw();
 	void selectNextObject();
 	void objectOperation(ObjOperationsEnum operation);
+	bool isLoaded();
+	lightStruct getLightStruct();
+	cameraStruct getCameraStruct();
 
 protected:
 	sceneStruct sceneStruct = {};
@@ -20,5 +23,6 @@ protected:
 
 	int currentObjectIndex = 0;
 	bool displayOnlySelectedObj = false;
+	bool loaded = false;
 };
 

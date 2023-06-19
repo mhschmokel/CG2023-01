@@ -30,8 +30,6 @@ sceneStruct IniFileParser::parse(string iniFilePath) {
 			istringstream ssline(line);
 			ssline >> param >> value1 >> value2 >> value3;
 
-			cout << param << " " << value1 << " " << value2 << " " << value3 << "\n";
-
 			if (param == "object") {
 				objStruct.filePath = value1;
 				hasToAddNewObject = true;
@@ -76,6 +74,31 @@ sceneStruct IniFileParser::parse(string iniFilePath) {
 
 			if (param == "lightSpecular") {
 				lightS.specular = std::stoi(value1);
+			}
+
+			if (param == "cameraPosition") {
+				glm::float32 v1 = glm::float32(std::stof(value1));
+				glm::float32 v2 = glm::float32(std::stof(value2));
+				glm::float32 v3 = glm::float32(std::stof(value3));
+				cameraS.cameraPosition = glm::vec3(v1, v2, v3);
+			}
+
+			if (param == "cameraFront") {
+				glm::float32 v1 = glm::float32(std::stof(value1));
+				glm::float32 v2 = glm::float32(std::stof(value2));
+				glm::float32 v3 = glm::float32(std::stof(value3));
+				cameraS.cameraFront = glm::vec3(v1, v2, v3);
+			}
+
+			if (param == "cameraUp") {
+				glm::float32 v1 = glm::float32(std::stof(value1));
+				glm::float32 v2 = glm::float32(std::stof(value2));
+				glm::float32 v3 = glm::float32(std::stof(value3));
+				cameraS.cameraUp = glm::vec3(v1, v2, v3);
+			}
+
+			if (param == "cameraSpeed") {
+				cameraS.cameraSpeed = std::stof(value1);
 			}
 
 			if (inputFile.eof()) {

@@ -15,6 +15,22 @@ void SceneManager::init(string iniPath, Shader *shader) {
 					   sceneStruct.objects[i].angle);
 		objects.push_back(obj);
 	}
+
+	this->loaded = true;
+}
+
+bool SceneManager::isLoaded() {
+	return this->loaded;
+}
+
+lightStruct SceneManager::getLightStruct()
+{
+	return sceneStruct.light;
+}
+
+cameraStruct SceneManager::getCameraStruct()
+{
+	return sceneStruct.camera;
 }
 
 void SceneManager::draw() {

@@ -43,14 +43,23 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void mouse_button_callback(GLFWwindow* window, int button, int action, int mods);
 
+void setCallbacks(GLFWwindow* window);
+void initIMGUI(GLFWwindow* window);
+void initCameraAndLight(Shader shader);
+void displayIMGUI(Shader *shader);
+void updateCamera(Shader shader, GLFWwindow* window);
+void closeIMGUI();
+
+SceneManager sceneManager;
+
 // Dimensões da janela (pode ser alterado em tempo de execução)
 const GLuint WIDTH = 1000, HEIGHT = 1000;
 const char* glsl_version = "#version 450";
 
-glm::vec3 cameraPos = glm::vec3(0.0, 0.0, 3.0);
-glm::vec3 cameraFront = glm::vec3(0.0, 0.0, -1.0);
-glm::vec3 cameraUp = glm::vec3(0.0, 1.0, 0.0);
-float cameraSpeed = 0.05;
+glm::vec3 cameraPos;
+glm::vec3 cameraFront;
+glm::vec3 cameraUp;
+float cameraSpeed;
 
 bool firstMouse = true;
 float lastX = 0.0, lastY = 0.0;
@@ -59,8 +68,11 @@ float yaw = -90.0, pitch = 0.0;
 bool changeObject = false;
 
 bool hasToDisableCursor = true;
+bool hasToInitCameraAndLight = true;
 
 ObjOperationsEnum objOperation = None;
+
+
 
 int main()
 {
@@ -69,18 +81,8 @@ int main()
 	GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, "Visualizador 3D!", nullptr, nullptr);
 	glfwMakeContextCurrent(window);
 
-	glfwSetKeyCallback(window, key_callback);
-	glfwSetCursorPosCallback(window, mouse_callback);
-	glfwSetMouseButtonCallback(window, mouse_button_callback);
-
-	IMGUI_CHECKVERSION();
-	ImGui::CreateContext();
-	ImGuiIO& io = ImGui::GetIO();
-	ImGui::StyleColorsDark();
-	ImGui_ImplGlfw_InitForOpenGL(window, true);
-	ImGui_ImplOpenGL3_Init(glsl_version);
-
-	 
+	setCallbacks(window);
+	initIMGUI(window);
 
 	//Desabilita o desenho do cursor do mouse
 	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
@@ -101,22 +103,14 @@ int main()
 	glfwGetFramebufferSize(window, &width, &height);
 	glViewport(0, 0, width, height);
 
-	SceneManager sceneManager;
-
 	Shader shader("../Common/shaders/camera_texture_phong.vs", "../Common/shaders/camera_texture_phong.fs");
 
 	glUseProgram(shader.ID);
 
 	glm::mat4 model = glm::mat4(1);
 	GLint modelLoc = glGetUniformLocation(shader.ID, "model");
-	
-	model = glm::rotate(model, (GLfloat)glfwGetTime()/*glm::radians(90.0f)*/, glm::vec3(1.0f, 0.0f, 0.0f));
-	glUniformMatrix4fv(modelLoc, 1, FALSE, glm::value_ptr(model));
 
-	//Definindo a matriz de view (posição e orientação da câmera)
-	glm::mat4 view = glm::lookAt(glm::vec3(0.0, 0.0, 3.0), glm::vec3(0.0, 0.0, 0.0), glm::vec3(0.0, 1.0, 0.0));
-	GLint viewLoc = glGetUniformLocation(shader.ID, "view");
-	glUniformMatrix4fv(viewLoc, 1, FALSE, glm::value_ptr(view));
+
 
 	//Definindo a matriz de projeção perpectiva
 	glm::mat4 projection = glm::perspective(glm::radians(45.0f), (GLfloat)width / (GLfloat)height, 0.1f, 100.0f);
@@ -125,47 +119,21 @@ int main()
 
 	glEnable(GL_DEPTH_TEST);
 
-	//Definindo as propriedades do material 
-	/*shader.setFloat("ka", 0.4);
-	shader.setFloat("kd", 0.5);
-	shader.setFloat("ks", 0.5);*/
-	shader.setFloat("q", 100);
 
-	//Definindo as propriedades da fonte de luz
-	shader.setVec3("lightPos", -2.0f, 10.0f, 3.0f);
-	shader.setVec3("lightColor", 1.0f, 1.0f, 1.0f);
 
 	glActiveTexture(GL_TEXTURE0);
 	glUniform1i(glGetUniformLocation(shader.ID, "colorBuffer"), 0);
 
-
 	while (!glfwWindowShouldClose(window))
 	{
-		// Checa se houveram eventos de input (key pressed, mouse moved etc.) e chama as funções de callback correspondentes
 		glfwPollEvents();
-
-		// Start the ImGui frame
-		ImGui_ImplOpenGL3_NewFrame();
-		ImGui_ImplGlfw_NewFrame();
-		ImGui::NewFrame();
-
+		
 		glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-
-		if (hasToDisableCursor) {
-			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-
-			//Alterando a matriz de view (posição e orientação da câmera)
-			glm::mat4 view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
-			glUniformMatrix4fv(viewLoc, 1, FALSE, glm::value_ptr(view));
-
-			//Enviando a posição da camera para o shader
-			shader.setVec3("cameraPos", cameraPos.x, cameraPos.y, cameraPos.z);
-		}
-		else {
-			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-		}
+		displayIMGUI(&shader);
+		initCameraAndLight(shader);
+		updateCamera(shader, window);
 
 		sceneManager.objectOperation(objOperation);
 		sceneManager.draw();
@@ -182,45 +150,10 @@ int main()
 			objOperation = None;
 		}
 
-		// ImGui toolbox window
-		ImGui::Begin("Toolbox");
-
-		// ImGui UI elements, for example:
-		ImGui::Text("Model Import");
-		if (ImGui::Button("Load .ini"))
-		{
-			// Load your .ini file here
-			ImGuiFileDialog::Instance()->OpenDialog("ChooseIniFile", "Choose .ini file", ".ini\0", ".");
-		}
-
-		if (ImGuiFileDialog::Instance()->Display("ChooseIniFile"))
-		{
-			// Check if the user selected a file
-			if (ImGuiFileDialog::Instance()->IsOk())
-			{
-				// Get the selected file path
-				std::string filePath = ImGuiFileDialog::Instance()->GetFilePathName();
-				sceneManager.init(filePath, &shader);
-			}
-
-			// Close the ImGuiFileDialog
-			ImGuiFileDialog::Instance()->Close();
-		}
-
-
-		ImGui::End();
-
-		// Render ImGui
-		ImGui::Render();
-		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-
 		glfwSwapBuffers(window);
 	}
 	
-	ImGuiFileDialog::Instance()->Close();
-	ImGui_ImplOpenGL3_Shutdown();
-	ImGui_ImplGlfw_Shutdown();
-	ImGui::DestroyContext();
+	closeIMGUI();
 	glfwTerminate();
 	return 0;
 }
@@ -364,4 +297,107 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 		// Right mouse button was pressed, do something here
 		hasToDisableCursor = false;
 	}
+}
+
+void setCallbacks(GLFWwindow* window)
+{
+	glfwSetKeyCallback(window, key_callback);
+	glfwSetCursorPosCallback(window, mouse_callback);
+	glfwSetMouseButtonCallback(window, mouse_button_callback);
+}
+
+void initIMGUI(GLFWwindow* window)
+{
+	IMGUI_CHECKVERSION();	
+	ImGui::CreateContext();
+	ImGuiIO& io = ImGui::GetIO();
+	ImGui::StyleColorsDark();
+	ImGui_ImplGlfw_InitForOpenGL(window, true);
+	ImGui_ImplOpenGL3_Init(glsl_version);
+}
+
+void initCameraAndLight(Shader shader)
+{
+	if (sceneManager.isLoaded() && hasToInitCameraAndLight) {
+		//Definindo a matriz de view (posição e orientação da câmera)
+		cameraStruct cameraS = sceneManager.getCameraStruct();
+
+		cameraPos = cameraS.cameraPosition;
+		cameraFront = cameraS.cameraFront;
+		cameraUp = cameraS.cameraUp;
+		cameraSpeed = cameraS.cameraSpeed;
+
+		glm::mat4 view = glm::lookAt(cameraPos, glm::vec3(0.0), cameraUp);
+		GLint viewLoc = glGetUniformLocation(shader.ID, "view");
+		glUniformMatrix4fv(viewLoc, 1, FALSE, glm::value_ptr(view));
+
+		lightStruct lightS = sceneManager.getLightStruct();
+		shader.setFloat("q", lightS.specular);
+		//Definindo as propriedades da fonte de luz
+		shader.setVec3("lightPos", lightS.position.x, lightS.position.y, lightS.position.z);
+		shader.setVec3("lightColor", lightS.color.x, lightS.color.y, lightS.color.z);
+
+		hasToInitCameraAndLight = false;
+	}
+}
+
+void displayIMGUI(Shader *shader)
+{
+	ImGui_ImplOpenGL3_NewFrame();
+	ImGui_ImplGlfw_NewFrame();
+	ImGui::NewFrame();
+
+	// ImGui toolbox window
+	ImGui::Begin("Toolbox");
+
+	// ImGui UI elements, for example:
+	ImGui::Text("Model Import");
+	if (ImGui::Button("Load .ini"))
+	{
+		// Load your .ini file here
+		ImGuiFileDialog::Instance()->OpenDialog("ChooseIniFile", "Choose .ini file", ".ini\0", ".");
+	}
+
+	if (ImGuiFileDialog::Instance()->Display("ChooseIniFile"))
+	{
+		// Check if the user selected a file
+		if (ImGuiFileDialog::Instance()->IsOk())
+		{
+			// Get the selected file path
+			std::string filePath = ImGuiFileDialog::Instance()->GetFilePathName();
+			sceneManager.init(filePath, shader);
+		}
+
+		// Close the ImGuiFileDialog
+		ImGuiFileDialog::Instance()->Close();
+	}
+
+
+	ImGui::End();
+
+	// Render ImGui
+	ImGui::Render();
+	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+}
+
+void updateCamera(Shader shader, GLFWwindow* window)
+{
+	if (hasToDisableCursor) {
+		glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+		glm::mat4 view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
+		GLint viewLoc = glGetUniformLocation(shader.ID, "view");
+		glUniformMatrix4fv(viewLoc, 1, FALSE, glm::value_ptr(view));
+		shader.setVec3("cameraPos", cameraPos.x, cameraPos.y, cameraPos.z);
+	}
+	else {
+		glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+	}
+}
+
+void closeIMGUI() 
+{
+	ImGuiFileDialog::Instance()->Close();
+	ImGui_ImplOpenGL3_Shutdown();
+	ImGui_ImplGlfw_Shutdown();
+	ImGui::DestroyContext();
 }
