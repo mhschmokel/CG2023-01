@@ -9,13 +9,19 @@
 
 #include "../Common/include/Shader.h"
 #include "Mesh.h"
+#include "mtlStruct.cpp"
 
 class Object
 {
 public:
 	Object() {}
 	~Object() {}
-	void initialize(string filePath, Shader* shader, glm::vec3 position = glm::vec3(0.0f), glm::vec3 scale = glm::vec3(1), float angle = 0.0, glm::vec3 axis = glm::vec3(0.0, 0.0, 1.0));
+	void initialize(string filePath, 
+					Shader* shader, 
+					glm::vec3 position = glm::vec3(0.0f), 
+					glm::vec3 scale = glm::vec3(1), 
+					float angle = 0.0, 
+					glm::vec3 axis = glm::vec3(0.0, 0.0, 1.0));
 	void update();
 	void draw();
 	void translate(glm::vec3 position);
@@ -37,6 +43,8 @@ protected:
 	void loadObj(string filePath);
 	GLuint generateVAO(vector<GLfloat> vertbuffer, int& nVerts);
 	GLuint loadTexture(string filePath);
+	string getTexturePath(string mtllibFilePath, string newmtlId);
+	vector <mtl> getObjectMtl(string mtllibFilePath);
 
 	GLuint VAO;
 	int nVertices;

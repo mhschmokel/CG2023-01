@@ -28,6 +28,8 @@ using namespace std;
 #include "ImGuiFileDialog.h"
 
 #include "Object.h"
+#include "SceneManager.h"
+#include "objectOperationsEnum.cpp"
 
 
 struct Vertex
@@ -71,6 +73,8 @@ bool displayAllObjects = false;
 bool spaceObjects = true;
 
 bool hasToDisableCursor = true;
+
+ObjOperationsEnum objOperation = None;
 
 int main()
 {
@@ -120,6 +124,8 @@ int main()
 	glfwGetFramebufferSize(window, &width, &height);
 	glViewport(0, 0, width, height);
 
+	SceneManager sceneManager;
+
 	Shader shader("../Common/shaders/camera_texture_phong.vs", "../Common/shaders/camera_texture_phong.fs");
 
 	glUseProgram(shader.ID);
@@ -143,10 +149,10 @@ int main()
 	glEnable(GL_DEPTH_TEST);
 
 	//Definindo as propriedades do material 
-	shader.setFloat("ka", 0.4);
+	/*shader.setFloat("ka", 0.4);
 	shader.setFloat("kd", 0.5);
-	shader.setFloat("ks", 0.5);
-	shader.setFloat("q", 10);
+	shader.setFloat("ks", 0.5);*/
+	shader.setFloat("q", 100);
 
 	//Definindo as propriedades da fonte de luz
 	shader.setVec3("lightPos", -2.0f, 10.0f, 3.0f);
@@ -200,84 +206,19 @@ int main()
 			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 		}
 
-		if (objects.size() > 0) {
-			if (displayAllObjects) {
+		sceneManager.objectOperation(objOperation);
+		sceneManager.draw();
 
-				glm::vec3 pos = glm::vec3(0.0, 0.0, 0.0);
-				for (Object obj : objects) {
-					obj.translate(pos);
-					pos.x += 3.0;
-					obj.draw();
-				}
-			}
-			else {
-				if (changeObject) {
-					rotateX = false;
-					rotateY = false;
-					rotateZ = false;
-					objects[currentObjectIdx].reset();
-					currentObjectIdx++;
-					currentObjectIdx = currentObjectIdx % objects.size();
-					changeObject = false;
-				}
+		if (changeObject) {
+			sceneManager.selectNextObject();
+			changeObject = false;
+		}
 
-				if (increaseScale) {
-					objects[currentObjectIdx].increaseScale();
-					increaseScale = false;
-				}
-				else if (decreaseScale) {
-					objects[currentObjectIdx].decreaseScale();
-					decreaseScale = false;
-				}
-
-				if (rotateX)
-				{
-					objects[currentObjectIdx].rotateX(angle);
-				}
-				else if (rotateY)
-				{
-					objects[currentObjectIdx].rotateY(angle);
-				}
-				else if (rotateZ)
-				{
-					objects[currentObjectIdx].rotateZ(angle);
-				}
-
-				if (moveUp) {
-					objects[currentObjectIdx].moveUp();
-					moveUp = false;
-				}
-				else if (moveDown) {
-					objects[currentObjectIdx].moveDown();
-					moveDown = false;
-				}
-				else if (moveRight) {
-					objects[currentObjectIdx].moveRight();
-					moveRight = false;
-				}
-				else if (moveLeft) {
-					objects[currentObjectIdx].moveLeft();
-					moveLeft = false;
-				}
-				else if (moveFront) {
-					objects[currentObjectIdx].moveFront();
-					moveFront = false;
-				}
-				else if (moveBack) {
-					objects[currentObjectIdx].moveBack();
-					moveBack = false;
-				}
-
-				if (resetObject) {
-					rotateX = false;
-					rotateY = false;
-					rotateZ = false;
-					objects[currentObjectIdx].reset();
-					resetObject = false;
-				}
-
-				objects[currentObjectIdx].draw();
-			}
+		if (objOperation == rotX || objOperation == rotY || objOperation == rotZ) {
+			//do nothing to keep object rotating
+		}
+		else {
+			objOperation = None;
 		}
 
 		// ImGui toolbox window
@@ -285,28 +226,20 @@ int main()
 
 		// ImGui UI elements, for example:
 		ImGui::Text("Model Import");
-		if (ImGui::Button("Load .obj"))
+		if (ImGui::Button("Load .ini"))
 		{
-			// Load your .obj file here
-			ImGuiFileDialog::Instance()->OpenDialog("ChooseObjFile", "Choose .obj file", ".obj\0", ".");
+			// Load your .ini file here
+			ImGuiFileDialog::Instance()->OpenDialog("ChooseIniFile", "Choose .ini file", ".ini\0", ".");
 		}
 
-		if (ImGuiFileDialog::Instance()->Display("ChooseObjFile"))
+		if (ImGuiFileDialog::Instance()->Display("ChooseIniFile"))
 		{
 			// Check if the user selected a file
 			if (ImGuiFileDialog::Instance()->IsOk())
 			{
 				// Get the selected file path
 				std::string filePath = ImGuiFileDialog::Instance()->GetFilePathName();
-				cout << "File path: " << filePath << endl;
-				// Load the .obj file using your existing loading function
-				/*VAO = loadSimpleObj(filePath, nVertices);*/
-				Object object;
-				
-				object.initialize(filePath, &shader);
-				objects.push_back(object);
-
-				currentObjectIdx = objects.size() - 1;
+				sceneManager.init(filePath, &shader);
 			}
 
 			// Close the ImGuiFileDialog
@@ -341,27 +274,37 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 
 	if (key == GLFW_KEY_X && action == GLFW_PRESS)
 	{
-		rotateX = !rotateX;
-		rotateY = false;
-		rotateZ = false;
+		if (objOperation == rotX) {
+			objOperation = None;
+		}
+		else {
+			objOperation = rotX;
+		}
+		
 	}
 
 	if (key == GLFW_KEY_Y && action == GLFW_PRESS)
 	{
-		rotateX = false;
-		rotateY = !rotateY;
-		rotateZ = false;
+		if (objOperation == rotY) {
+			objOperation = None;
+		}
+		else {
+			objOperation = rotY;
+		}
 	}
 
 	if (key == GLFW_KEY_Z && action == GLFW_PRESS)
 	{
-		rotateX = false;
-		rotateY = false;
-		rotateZ = !rotateZ;
+		if (objOperation == rotZ) {
+			objOperation = None;
+		}
+		else {
+			objOperation = rotZ;
+		}
 	}
 
 	if (key == GLFW_KEY_R && action == GLFW_PRESS) {
-		resetObject = true;
+		objOperation = resetValues;
 	}
 
 	if (key == GLFW_KEY_W)
@@ -384,38 +327,37 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 		cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
 	}
 	
-	if (key == GLFW_KEY_KP_ADD) {
-		increaseScale = true;
+	if (key == GLFW_KEY_PAGE_UP) {
+		objOperation = incScale;
 	}
-	if (key == GLFW_KEY_KP_SUBTRACT) {
-		decreaseScale = true;
+	if (key == GLFW_KEY_PAGE_DOWN) {
+		objOperation = decScale;
 	}
 
 	if (key == GLFW_KEY_DOWN) {
-		moveDown = true;
+		objOperation = mDown;
 	}
 	if (key == GLFW_KEY_UP) {
-		moveUp = true;
+		objOperation = mUp;
 	}
 	if (key == GLFW_KEY_LEFT) {
-		moveLeft = true;
+		objOperation = mLeft;
 	}
 	if (key == GLFW_KEY_RIGHT) {
-		moveRight = true;
+		objOperation = mRight;
 	}
 	if (key == GLFW_KEY_LEFT_BRACKET) {
-		moveFront = true;
+		objOperation = mBack;
 	}
 	if (key == GLFW_KEY_RIGHT_BRACKET) {
-		moveBack = true;
+		objOperation = mFront;
 	}
 	if (key == GLFW_KEY_N && action == GLFW_PRESS) {
 		changeObject = true;
 	}
 
 	if (key == GLFW_KEY_SPACE && action == GLFW_PRESS) {
-		displayAllObjects = !displayAllObjects;
-		resetObject = true;
+		objOperation = displayOnlySelected;
 	}
 }
 

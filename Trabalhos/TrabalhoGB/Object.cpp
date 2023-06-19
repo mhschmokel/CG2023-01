@@ -1,7 +1,5 @@
 #include "Object.h"
 
-#include "Object.h"
-
 void Object::initialize(
 	string filePath,
 	Shader* shader,
@@ -18,6 +16,7 @@ void Object::initialize(
 	this->axis = axis;
 
 	loadObj(filePath);
+	update();
 }
 
 void Object::update()
@@ -112,6 +111,7 @@ void Object::reset() {
 
 void Object::draw()
 {
+	update();
 	for (int i = 0; i < meshes.size(); i++)
 	{
 		meshes[i].draw();
@@ -124,12 +124,6 @@ void Object::deleteVAO() {
 
 void Object::loadObj(string filePath)
 {
-		string texNomes[] = { "../models/Pokemon/textures/PikachuMouthDh.png",
-							 "../models/Pokemon/textures/PikachuDh.png",
-							 "../models/Pokemon/textures/PikachuHohoDh.png",
-							 "../models/Pokemon/textures/PikachuEyeDh.png",
-							 "../models/Pokemon/textures/PikachuDh.png" };
-
 	int i = 0;
 
 	glm::vec3 color;
@@ -142,6 +136,13 @@ void Object::loadObj(string filePath)
 	vector <glm::vec2> texCoords;
 	vector <glm::vec3> normals;
 	vector <GLfloat> vbuffer;
+
+	vector <mtl> objectMaterials;
+	mtl currentMaterial = {};
+
+	string rootObjectFilePath = filePath.substr(0, filePath.find_last_of("\\") + 1);
+	string mtllibFilePath = "";
+	GLuint texID = 0;
 
 	ifstream inputFile;
 	inputFile.open(filePath.c_str());
@@ -162,7 +163,8 @@ void Object::loadObj(string filePath)
 			istringstream ssline(line);
 			ssline >> word;
 
-			//cout << word << " ";
+			/*cout << word << "\n";
+			cout << line;*/
 			if (word == "v" || inputFile.eof())
 			{
 				if (inicioGrupo)
@@ -171,14 +173,25 @@ void Object::loadObj(string filePath)
 					{
 						inicioGrupo = false;
 
-						Mesh grupo;
-						GLuint texID = loadTexture(texNomes[i]);
-						i++;
+						Mesh mesh;
 						int nVerts;
 						GLuint VAO = generateVAO(vbuffer, nVerts);
-						grupo.initialize(VAO, nVerts, shader, texID);
 
-						meshes.push_back(grupo);
+						texID = 0;
+						if (!currentMaterial.texturePath.empty()) {
+							texID = loadTexture(currentMaterial.texturePath);
+						}
+
+						mesh.initialize(VAO, 
+							nVerts, 
+							shader, 
+							texID, 
+							currentMaterial.ka,
+							currentMaterial.ks,
+							currentMaterial.kd
+							);
+
+						meshes.push_back(mesh);
 
 						//Limpar o array auxiliar do buffer de geometria
 						vbuffer.clear();
@@ -210,6 +223,34 @@ void Object::loadObj(string filePath)
 			if (word == "g")
 			{
 				inicioGrupo = true;
+			}
+
+			if (word == "mtllib") {
+				string mtlibStringSize = "mtllib ";
+				string mtllibFile = sline.substr(mtlibStringSize.size());
+
+				mtllibFilePath = rootObjectFilePath + mtllibFile;
+
+				objectMaterials = getObjectMtl(mtllibFilePath);
+			}
+
+			if (word == "usemtl") {
+				string usemtlStringSize = "usemtl ";
+				string matlib = sline.substr(usemtlStringSize.size());
+
+				for (int i = 0; i < objectMaterials.size(); i++) {
+					if (objectMaterials[i].mtlId == matlib) {
+						currentMaterial = objectMaterials[i];
+						break;
+					}
+				}
+				
+				/*string texturePath = getTexturePath(mtllibFilePath, matlib);
+
+				texID = 0;
+				if (!texturePath.empty()) {
+					texID = loadTexture(texturePath);
+				}*/
 			}
 
 			if (word == "f")
@@ -261,6 +302,125 @@ void Object::loadObj(string filePath)
 	}
 	inputFile.close();
 
+}
+
+string Object::getTexturePath(string mtllibFilePath, string newmtlId) {
+	char line[100];
+	string sline;
+	string texturePath = "";
+	string rootObjectFilePath = mtllibFilePath.substr(0, mtllibFilePath.find_last_of("\\") + 1);
+	
+	ifstream inputFile;
+	inputFile.open(mtllibFilePath.c_str());
+
+	bool hasToGetTexturePath = false;
+
+	if (inputFile.is_open()) {
+		while (inputFile.good()) {
+			inputFile.getline(line,100);
+			sline = line;
+
+			string param;
+			string value;
+
+			istringstream ssline(line);
+			ssline >> param >> value;
+
+			if (param == "newmtl" && value == newmtlId) {
+				hasToGetTexturePath = true;
+			}
+			
+			if (param == "map_Kd" && hasToGetTexturePath) {
+				texturePath = rootObjectFilePath + value;
+				hasToGetTexturePath = false;
+				break;
+			}
+
+		}
+		inputFile.close();
+	}
+	else {
+		cout << "Unable to open file";
+	}
+	
+	return texturePath;
+}
+
+vector <mtl> Object::getObjectMtl(string mtllibFilePath) {
+	char line[100];
+	string sline;
+	string rootObjectFilePath = mtllibFilePath.substr(0, mtllibFilePath.find_last_of("\\") + 1);
+
+	vector <mtl> objectMaterials;
+	mtl objectMaterial = {};
+
+	ifstream inputFile;
+	inputFile.open(mtllibFilePath.c_str());
+
+	if (inputFile.is_open()) {
+		while (inputFile.good()) {
+			inputFile.getline(line, 100);
+			sline = line;
+
+			string param;
+			string value;
+
+			istringstream ssline(line);
+			ssline >> param >> value;
+
+			if (param == "newmtl") {
+				objectMaterial.mtlId = value;
+			}
+
+			if (param == "Ns") {
+				objectMaterial.ns = std::stoi(value);
+			}
+
+			if (param == "Ni") {
+				objectMaterial.ni = std::stof(value);
+			}
+
+			if (param == "d") {
+				objectMaterial.d = std::stof(value);
+			}
+
+			if (param == "Tf") {
+				objectMaterial.tf = std::stoi(value);
+			}
+
+			if (param == "illum") {
+				objectMaterial.illum = std::stoi(value);
+			}
+
+			if (param == "Ka") {
+				objectMaterial.ka = std::stof(value);
+			}
+
+			if (param == "Kd") {
+				objectMaterial.kd = std::stof(value);
+			}
+
+			if (param == "Ks") {
+				objectMaterial.ks = std::stof(value);
+			}
+
+			if (param == "map_Kd") {
+				objectMaterial.texturePath = rootObjectFilePath + value;
+			}
+
+			if (sline.empty()) {
+				objectMaterials.push_back(objectMaterial);
+				objectMaterial = {};
+			}
+
+		}
+		inputFile.close();
+	}
+	else {
+		cout << "Unable to open file";
+	}
+
+	return objectMaterials;
 }
 
 //void Object::loadObj(string filePath)

@@ -29,13 +29,23 @@
     <ClCompile Include="..\dependencies\imgui\src\imgui_impl_opengl3.cpp" />
     <ClCompile Include="..\dependencies\imgui\src\imgui_tables.cpp" />
     <ClCompile Include="..\dependencies\imgui\src\imgui_widgets.cpp" />
+    <ClCompile Include="cameraStruct.cpp" />
+    <ClCompile Include="IniFileParser.cpp" />
+    <ClCompile Include="lightStruct.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Mesh.cpp" />
+    <ClCompile Include="mtlStruct.cpp" />
     <ClCompile Include="Object.cpp" />
+    <ClCompile Include="objectOperationsEnum.cpp" />
+    <ClCompile Include="objectStruct.cpp" />
+    <ClCompile Include="SceneManager.cpp" />
+    <ClCompile Include="SceneStruct.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="IniFileParser.h" />
     <ClInclude Include="Mesh.h" />
     <ClInclude Include="Object.h" />
+    <ClInclude Include="SceneManager.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
