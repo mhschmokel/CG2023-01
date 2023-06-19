@@ -43,16 +43,9 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void mouse_button_callback(GLFWwindow* window, int button, int action, int mods);
 
-// Protótipos das funções
-int setupGeometry();
-int loadSimpleObj(string filePath, int& nVertices, glm::vec3 color = glm::vec3(1.0, 0.0, 0.0));
-GLuint generateTexture(string filepath);
-
 // Dimensões da janela (pode ser alterado em tempo de execução)
 const GLuint WIDTH = 1000, HEIGHT = 1000;
 const char* glsl_version = "#version 450";
-
-bool rotateX = false, rotateY = false, rotateZ = false;
 
 glm::vec3 cameraPos = glm::vec3(0.0, 0.0, 3.0);
 glm::vec3 cameraFront = glm::vec3(0.0, 0.0, -1.0);
@@ -63,14 +56,7 @@ bool firstMouse = true;
 float lastX = 0.0, lastY = 0.0;
 float yaw = -90.0, pitch = 0.0;
 
-bool increaseScale = false, decreaseScale = false;
-bool moveUp = false, moveDown = false, moveLeft = false, moveRight = false, moveFront = false, moveBack = false;
-bool resetObject = false;
-
 bool changeObject = false;
-
-bool displayAllObjects = false;
-bool spaceObjects = true;
 
 bool hasToDisableCursor = true;
 
@@ -78,15 +64,6 @@ ObjOperationsEnum objOperation = None;
 
 int main()
 {
-	std::vector<std::string> modelsPath = {
-		/*"../models/Cube/cube.obj", 
-		"../models/Suzanne/suzanneTri.obj", 
-		"../models/Pokemon/Pikachu.obj", 
-		"../models/Classic-NoTexture/apple.obj" */
-	};
-
-	
-
 	glfwInit();
 
 	GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, "Visualizador 3D!", nullptr, nullptr);
@@ -161,19 +138,6 @@ int main()
 	glActiveTexture(GL_TEXTURE0);
 	glUniform1i(glGetUniformLocation(shader.ID, "colorBuffer"), 0);
 
-	std::vector<Object> objects;
-	int currentObjectIdx = 0;
-
-	
-	GLuint VAO;
-	int nVertices = 0;
-
-	/*for (const std::string& path : modelsPath) {
-		VAO = loadSimpleObj(path, nVertices);
-		object.initialize(VAO, nVertices, &shader);
-		objects.push_back(object);
-	}*/
-	
 
 	while (!glfwWindowShouldClose(window))
 	{
@@ -188,9 +152,6 @@ int main()
 		glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		
-
-		float angle = (GLfloat)glfwGetTime() * 10;
 
 		if (hasToDisableCursor) {
 			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
@@ -256,9 +217,6 @@ int main()
 		glfwSwapBuffers(window);
 	}
 	
-	for (Object obj : objects) {
-		obj.deleteVAO();
-	}
 	ImGuiFileDialog::Instance()->Close();
 	ImGui_ImplOpenGL3_Shutdown();
 	ImGui_ImplGlfw_Shutdown();
