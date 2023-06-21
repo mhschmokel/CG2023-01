@@ -40,7 +40,9 @@ void main()
 	vec3 specular = spec * lightColor;
 
 	vec4 texColor = texture(colorBuffer, texCoord);
+
 	vec3 result = (ambient + diffuse) * vec3(texColor) + specular;
+	
 
 	color = vec4(result,1.0);
 }
