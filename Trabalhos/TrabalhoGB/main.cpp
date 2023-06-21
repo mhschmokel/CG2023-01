@@ -7,6 +7,7 @@
 #include <stb_image.h>
 
 using namespace std;
+using namespace glm;
 
 // GLAD
 #include <glad/glad.h>
@@ -72,7 +73,7 @@ bool hasToInitCameraAndLight = true;
 
 ObjOperationsEnum objOperation = None;
 
-
+float curveScale = 20.0f;
 
 int main()
 {

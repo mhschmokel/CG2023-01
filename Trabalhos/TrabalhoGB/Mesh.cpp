@@ -24,6 +24,7 @@ void Mesh::update()
 
 void Mesh::draw()
 {
+
 	this->shader->setFloat("ka", this->ka);
 	this->shader->setFloat("ks", this->ks);
 	this->shader->setFloat("kd", this->kd);

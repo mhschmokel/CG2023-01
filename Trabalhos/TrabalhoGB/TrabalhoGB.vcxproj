@@ -30,6 +30,7 @@
     <ClCompile Include="..\dependencies\imgui\src\imgui_tables.cpp" />
     <ClCompile Include="..\dependencies\imgui\src\imgui_widgets.cpp" />
     <ClCompile Include="cameraStruct.cpp" />
+    <ClCompile Include="CurveReader.cpp" />
     <ClCompile Include="IniFileParser.cpp" />
     <ClCompile Include="lightStruct.cpp" />
     <ClCompile Include="main.cpp" />
@@ -42,6 +43,7 @@
     <ClCompile Include="SceneStruct.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="CurveReader.h" />
     <ClInclude Include="IniFileParser.h" />
     <ClInclude Include="Mesh.h" />
     <ClInclude Include="Object.h" />

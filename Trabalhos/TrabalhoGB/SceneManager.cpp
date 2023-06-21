@@ -12,7 +12,8 @@ void SceneManager::init(string iniPath, Shader *shader) {
 					   shader,
 					   sceneStruct.objects[i].position,
 					   sceneStruct.objects[i].scale,
-					   sceneStruct.objects[i].angle);
+					   sceneStruct.objects[i].angle,
+			      sceneStruct.objects[i].curvePath);
 		objects.push_back(obj);
 	}
 

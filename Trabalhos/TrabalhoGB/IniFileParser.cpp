@@ -101,6 +101,10 @@ sceneStruct IniFileParser::parse(string iniFilePath) {
 				cameraS.cameraSpeed = std::stof(value1);
 			}
 
+			if (param == "curvePoints") {
+				objStruct.meshPath = value1;
+			}
+
 			if (inputFile.eof()) {
 				sceneStruct.objects = objStructs;
 				sceneStruct.light = lightS;

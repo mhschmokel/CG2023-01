@@ -6,4 +6,5 @@ struct objectStruct {
 	glm::vec3 position;
 	glm::vec3 scale;
 	float angle;
+	string curvePath;
 };
