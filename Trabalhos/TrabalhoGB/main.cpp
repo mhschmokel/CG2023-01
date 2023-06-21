@@ -110,17 +110,12 @@ int main()
 	glm::mat4 model = glm::mat4(1);
 	GLint modelLoc = glGetUniformLocation(shader.ID, "model");
 
-
-
 	//Definindo a matriz de projeção perpectiva
 	glm::mat4 projection = glm::perspective(glm::radians(45.0f), (GLfloat)width / (GLfloat)height, 0.1f, 100.0f);
 	GLint projLoc = glGetUniformLocation(shader.ID, "projection");
 	glUniformMatrix4fv(projLoc, 1, FALSE, glm::value_ptr(projection));
 
 	glEnable(GL_DEPTH_TEST);
-
-
-
 	glActiveTexture(GL_TEXTURE0);
 	glUniform1i(glGetUniformLocation(shader.ID, "colorBuffer"), 0);
 

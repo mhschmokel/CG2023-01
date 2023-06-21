@@ -261,7 +261,6 @@ void Object::loadObj(string filePath)
 
 				for (int i = 0; i < 3; i++)
 				{
-					//Recuperando os indices de v
 					int pos = tokens[i].find("/");
 					string token = tokens[i].substr(0, pos);
 					int index = atoi(token.c_str()) - 1;
@@ -277,20 +276,74 @@ void Object::loadObj(string filePath)
 					//Recuperando os indices de vts
 					tokens[i] = tokens[i].substr(pos + 1);
 					pos = tokens[i].find("/");
+
+					if (pos == 0) {
+						tokens[i] = tokens[i].substr(pos + 1);
+					}
+
+					pos = tokens[i].find("/");
+					token = tokens[i].substr(0, pos);
+					int indexT = atoi(token.c_str()) - 1;
+
+					if (indexT < 0) {
+						indexT = 0;
+					}
+
+					if (texCoords.size() == 0) {
+						vbuffer.push_back(0);
+						vbuffer.push_back(0);
+					}
+					else {
+						vbuffer.push_back(texCoords[indexT].s);
+						vbuffer.push_back(texCoords[indexT].t);
+					}
+
+					tokens[i] = tokens[i].substr(pos + 1);
 					token = tokens[i].substr(0, pos);
 					index = atoi(token.c_str()) - 1;
 
-					vbuffer.push_back(texCoords[index].s);
-					vbuffer.push_back(texCoords[index].t);
-
-					//Recuperando os indices de vns
-					tokens[i] = tokens[i].substr(pos + 1);
-					index = atoi(tokens[i].c_str()) - 1;
+					if (index < 0) {
+						index = 0;
+					}
 
 					vbuffer.push_back(normals[index].x);
 					vbuffer.push_back(normals[index].y);
 					vbuffer.push_back(normals[index].z);
+
 				}
+
+				//for (int i = 0; i < 3; i++)
+				//{
+				//	//Recuperando os indices de v
+				//	int pos = tokens[i].find("/");
+				//	string token = tokens[i].substr(0, pos);
+				//	int index = atoi(token.c_str()) - 1;
+				//	indices.push_back(index);
+
+				//	vbuffer.push_back(vertices[index].x);
+				//	vbuffer.push_back(vertices[index].y);
+				//	vbuffer.push_back(vertices[index].z);
+				//	vbuffer.push_back(colors[index].r);
+				//	vbuffer.push_back(colors[index].g);
+				//	vbuffer.push_back(colors[index].b);
+
+				//	//Recuperando os indices de vts
+				//	tokens[i] = tokens[i].substr(pos + 1);
+				//	pos = tokens[i].find("/");
+				//	token = tokens[i].substr(0, pos);
+				//	index = atoi(token.c_str()) - 1;
+
+				//	vbuffer.push_back(texCoords[index].s);
+				//	vbuffer.push_back(texCoords[index].t);
+
+				//	//Recuperando os indices de vns
+				//	tokens[i] = tokens[i].substr(pos + 1);
+				//	index = atoi(tokens[i].c_str()) - 1;
+
+				//	vbuffer.push_back(normals[index].x);
+				//	vbuffer.push_back(normals[index].y);
+				//	vbuffer.push_back(normals[index].z);
+				//}
 			}
 
 		}
