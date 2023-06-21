@@ -6,7 +6,8 @@ void Object::initialize(
 	glm::vec3 position,
 	glm::vec3 scale,
 	float angle,
-	glm::vec3 axis)
+	glm::vec3 axis,
+	string curvePath)
 {
 	this->shader = shader;
 	this->position = position;
@@ -14,6 +15,10 @@ void Object::initialize(
 	this->scale = scale;
 	this->angle = angle;
 	this->axis = axis;
+
+	
+	curve.readControlPoints(curvePath, 20.0f);	
+	curve.setShader(shader);
 
 	loadObj(filePath);
 	update();
