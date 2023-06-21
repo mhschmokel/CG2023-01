@@ -148,14 +148,14 @@ void Object::loadObj(string filePath)
 	inputFile.open(filePath.c_str());
 	if (inputFile.is_open())
 	{
-		char line[100];
+		char line[200];
 		string sline;
 
 		bool inicioGrupo = true;
 
 		while (!inputFile.eof())
 		{
-			inputFile.getline(line, 100);
+			inputFile.getline(line, 200);
 			sline = line;
 
 			string word;
@@ -256,39 +256,39 @@ void Object::loadObj(string filePath)
 			if (word == "f")
 			{
 				string tokens[3];
-
+				
 				ssline >> tokens[0] >> tokens[1] >> tokens[2];
-
+				
 				for (int i = 0; i < 3; i++)
 				{
 					int pos = tokens[i].find("/");
 					string token = tokens[i].substr(0, pos);
 					int index = atoi(token.c_str()) - 1;
 					indices.push_back(index);
-
+				
 					vbuffer.push_back(vertices[index].x);
 					vbuffer.push_back(vertices[index].y);
 					vbuffer.push_back(vertices[index].z);
 					vbuffer.push_back(colors[index].r);
 					vbuffer.push_back(colors[index].g);
 					vbuffer.push_back(colors[index].b);
-
+				
 					//Recuperando os indices de vts
 					tokens[i] = tokens[i].substr(pos + 1);
 					pos = tokens[i].find("/");
-
+				
 					if (pos == 0) {
 						tokens[i] = tokens[i].substr(pos + 1);
 					}
-
+				
 					pos = tokens[i].find("/");
 					token = tokens[i].substr(0, pos);
 					int indexT = atoi(token.c_str()) - 1;
-
+				
 					if (indexT < 0) {
 						indexT = 0;
 					}
-
+				
 					if (texCoords.size() == 0) {
 						vbuffer.push_back(0);
 						vbuffer.push_back(0);
@@ -297,53 +297,20 @@ void Object::loadObj(string filePath)
 						vbuffer.push_back(texCoords[indexT].s);
 						vbuffer.push_back(texCoords[indexT].t);
 					}
-
+				
 					tokens[i] = tokens[i].substr(pos + 1);
 					token = tokens[i].substr(0, pos);
 					index = atoi(token.c_str()) - 1;
-
+				
 					if (index < 0) {
 						index = 0;
 					}
-
+				
 					vbuffer.push_back(normals[index].x);
 					vbuffer.push_back(normals[index].y);
 					vbuffer.push_back(normals[index].z);
-
+				
 				}
-
-				//for (int i = 0; i < 3; i++)
-				//{
-				//	//Recuperando os indices de v
-				//	int pos = tokens[i].find("/");
-				//	string token = tokens[i].substr(0, pos);
-				//	int index = atoi(token.c_str()) - 1;
-				//	indices.push_back(index);
-
-				//	vbuffer.push_back(vertices[index].x);
-				//	vbuffer.push_back(vertices[index].y);
-				//	vbuffer.push_back(vertices[index].z);
-				//	vbuffer.push_back(colors[index].r);
-				//	vbuffer.push_back(colors[index].g);
-				//	vbuffer.push_back(colors[index].b);
-
-				//	//Recuperando os indices de vts
-				//	tokens[i] = tokens[i].substr(pos + 1);
-				//	pos = tokens[i].find("/");
-				//	token = tokens[i].substr(0, pos);
-				//	index = atoi(token.c_str()) - 1;
-
-				//	vbuffer.push_back(texCoords[index].s);
-				//	vbuffer.push_back(texCoords[index].t);
-
-				//	//Recuperando os indices de vns
-				//	tokens[i] = tokens[i].substr(pos + 1);
-				//	index = atoi(tokens[i].c_str()) - 1;
-
-				//	vbuffer.push_back(normals[index].x);
-				//	vbuffer.push_back(normals[index].y);
-				//	vbuffer.push_back(normals[index].z);
-				//}
 			}
 
 		}
@@ -475,171 +442,6 @@ vector <mtl> Object::getObjectMtl(string mtllibFilePath) {
 
 	return objectMaterials;
 }
-
-//void Object::loadObj(string filePath)
-//{
-//	string texNomes[] = { "../models/Pokemon/textures/PikachuMouthDh.png",
-//						 "../models/Pokemon/textures/PikachuDh.png",
-//						 "../models/Pokemon/textures/PikachuHohoDh.png",
-//						 "../models/Pokemon/textures/PikachuEyeDh.png",
-//						 "../models/Pokemon/textures/PikachuDh.png" };
-//
-//	/*vector <string> texNomes;
-//
-//	texNomes.push_back("../models/Pokemon/textures/PikachuMouthDh.png");
-//	texNomes.push_back("../models/Pokemon/textures/PikachuDh.png");
-//	texNomes.push_back("../models/Pokemon/textures/PikachuHohoDh.png");
-//	texNomes.push_back("../models/Pokemon/textures/PikachuEyeDh.png");
-//	texNomes.push_back("../models/Pokemon/textures/PikachuDh.png");*/
-//
-//	int i = 0;
-//
-//	glm::vec3 color;
-//	color.r = 1.0;  
-//	color.g = 0.0;  
-//	color.b = 0.0;
-//
-//	vector <glm::vec3> vertices;
-//	vector <glm::vec3> colors;
-//	vector <GLuint> indices;
-//	vector <glm::vec2> texCoords;
-//	vector <glm::vec3> normals;
-//	vector <GLfloat> vbuffer;
-//
-//	ifstream inputFile;
-//	inputFile.open(filePath.c_str());
-//
-//	if (inputFile.is_open())
-//	{
-//		char line[100];
-//		string sline;
-//
-//		bool inicioGrupo = true;
-//
-//		while (!inputFile.eof())
-//		{
-//			inputFile.getline(line, 100);
-//			sline = line;
-//
-//			string word;
-//
-//			istringstream ssline(sline);
-//			ssline >> word;
-//
-//			if (word == "v" || inputFile.eof())
-//			{
-//				if (inicioGrupo)
-//				{
-//					if (vbuffer.size())
-//					{
-//						inicioGrupo = false;
-//
-//						Mesh mesh;
-//
-//						//if (!texNomes.empty()) {
-//							GLuint texID = loadTexture(texNomes[i]);
-//							i++;
-//						//}
-//
-//						int nVerts;
-//						GLuint VAO = generateVAO(vbuffer, nVerts);
-//						mesh.initialize(VAO, nVerts, shader, texID);
-//
-//						meshes.push_back(mesh);
-//
-//						//Limpar o array auxiliar do buffer de geometria
-//						vbuffer.clear();
-//					}
-//				}
-//
-//				glm::vec3 v;
-//				ssline >> v.x >> v.y >> v.z;
-//				vertices.push_back(v);
-//				colors.push_back(color);
-//			}
-//			if (word == "vt")
-//			{
-//				glm::vec2 vt;
-//				ssline >> vt.s >> vt.t;
-//				texCoords.push_back(vt);
-//			}
-//			if (word == "vn")
-//			{
-//				glm::vec3 vn;
-//				ssline >> vn.x >> vn.y >> vn.z;
-//				normals.push_back(vn);
-//			}
-//			if (word == "g")
-//			{
-//				inicioGrupo = true;
-//			}
-//			if (word == "f")
-//			{
-//				string tokens[3];
-//
-//				ssline >> tokens[0] >> tokens[1] >> tokens[2];
-//
-//				for (int i = 0; i < 3; i++)
-//				{
-//					int pos = tokens[i].find("/");
-//					string token = tokens[i].substr(0, pos);
-//					int index = atoi(token.c_str()) - 1;
-//					indices.push_back(index);
-//
-//					vbuffer.push_back(vertices[index].x);
-//					vbuffer.push_back(vertices[index].y);
-//					vbuffer.push_back(vertices[index].z);
-//					vbuffer.push_back(colors[index].r);
-//					vbuffer.push_back(colors[index].g);
-//					vbuffer.push_back(colors[index].b);
-//
-//					//Recuperando os indices de vts
-//					tokens[i] = tokens[i].substr(pos + 1);
-//					pos = tokens[i].find("/");
-//
-//					if (pos == 0) {
-//						tokens[i] = tokens[i].substr(pos + 1);
-//					}
-//
-//					pos = tokens[i].find("/");
-//					token = tokens[i].substr(0, pos);
-//					int indexT = atoi(token.c_str()) - 1;
-//
-//					if (indexT < 0) {
-//						indexT = 0;
-//					}
-//
-//					if (texCoords.size() == 0) {
-//						vbuffer.push_back(0);
-//						vbuffer.push_back(0);
-//					}
-//					else {
-//						vbuffer.push_back(texCoords[indexT].s);
-//						vbuffer.push_back(texCoords[indexT].t);
-//					}
-//
-//					tokens[i] = tokens[i].substr(pos + 1);
-//					token = tokens[i].substr(0, pos);
-//					index = atoi(token.c_str()) - 1;
-//
-//					if (index < 0) {
-//						index = 0;
-//					}
-//
-//					vbuffer.push_back(normals[index].x);
-//					vbuffer.push_back(normals[index].y);
-//					vbuffer.push_back(normals[index].z);
-//
-//				}
-//			}
-//		}
-//	}
-//	else
-//	{
-//		cout << "Não foi possivel abrir o arquivo " << filePath << endl;
-//	}
-//	inputFile.close();
-//}
 
 GLuint Object::generateVAO(vector<GLfloat> vbuffer, int& nVerts)
 {
