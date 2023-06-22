@@ -34,8 +34,8 @@ O arquivo funciona de maneira semelhante à um arquivo de materiais (.mtl), cons
 
 ## Dependências:
 
-- ![ImGUI](https://github.com/ocornut/imgui)
-- ![ImGUI File Browser](https://github.com/AirGuanZ/imgui-filebrowser)
+- [ImGUI](https://github.com/ocornut/imgui)
+- [ImGUI File Browser](https://github.com/AirGuanZ/imgui-filebrowser)
 
 # Trabalho GA
 
@@ -61,5 +61,5 @@ O trabalho consiste em um visualizador de objetos 3D a partir de arquivos .obj.
 
 ## Dependências:
 
-- ![ImGUI](https://github.com/ocornut/imgui)
-- ![ImGUI File Browser](https://github.com/AirGuanZ/imgui-filebrowser)
+- [ImGUI](https://github.com/ocornut/imgui)
+- [ImGUI File Browser](https://github.com/AirGuanZ/imgui-filebrowser)
